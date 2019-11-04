@@ -28,7 +28,7 @@ class CustomDatasetFromImages(Dataset):
             # 541 classes
         # self.label2idx2 = {j.strip().lower(): (int(i.strip().lower()) -1) for i, j in list(csv.reader(open('labels.txt', 'r'), delimiter='\t'))}
         self.label2idx2 = {j.strip().lower(): (int(i.strip().lower()) - 1) for
-                i, j in list(csv.reader(open('labels2.txt', 'r'), delimiter='\t'))}
+                i, j in list(csv.reader(open('/home/sachelar/multitask-eye-disease-recognition/labels2.txt', 'r'), delimiter='\t'))}
 
         self.to_tensor = transforms.Compose([
                                 transforms.Resize((224, 224)),

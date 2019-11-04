@@ -570,11 +570,14 @@ class KDTrainer(BaseTrainer):
         self.save_location_dir = os.path.join('kdmodels', kd_type +'-'+str(trainset_split)+'-'+str(datetime.now()))
         self.init_saves()
 
+    # SET kd_type to kd_loss for KD, self for self training on unlabelled
     def distillation_loss(self, y, labels, teacher_scores, T = 5, alpha = 0.95, reduction_kd='mean', reduction_nll='mean'):
         if teacher_scores is not None:
-            # d_loss = torch.nn.KLDivLoss(reduction=reduction_kd)(F.log_softmax(y/ T, dim= -1), F.softmax(teacher_scores / T, dim=-1)) * T * T
-            preds = F.softmax(teacher_scores , dim=-1).argmax(dim=-1)
-            d_loss = F.cross_entropy(y, labels, reduction=reduction_nll)
+            if kd_type == 'kd_loss':
+                d_loss = torch.nn.KLDivLoss(reduction=reduction_kd)(F.log_softmax(y/ T, dim= -1), F.softmax(teacher_scores / T, dim=-1)) * T * T
+            elif kd_type == 'self':
+                preds = F.softmax(teacher_scores , dim=-1).argmax(dim=-1)
+                d_loss = F.cross_entropy(y, labels, reduction=reduction_nll)
         else:
             assert alpha == 0, 'alpha cannot be {} when teacher scores are not provided'.format(alpha)
             d_loss = 0.0

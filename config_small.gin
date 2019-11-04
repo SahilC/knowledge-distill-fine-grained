@@ -4,8 +4,8 @@ run.val_split = 0.15
 run.num_workers = 32
 run.print_every = 100
 
-run.trainval_csv_path = 'trainset_with_normal_30_sept.csv'
-run.test_csv_path = 'merged_combined_30_sept.csv'
+run.trainval_csv_path = '~/multitask-eye-disease-recognition/trainset_with_normal_30_sept.csv'
+run.test_csv_path = '~/multitask-eye-disease-recognition/merged_combined_30_sept.csv'
 # run.trainval_csv_path = 'trainset_with_normal_30_sept.csv'
 # run.trainval_csv_path = 'verified_oiscapture_trained_labels_with_normal.csv'
 # run.test_csv_path = 'testset_filtered.csv'
