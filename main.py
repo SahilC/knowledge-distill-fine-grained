@@ -42,6 +42,7 @@ def run(batch_size, epochs, val_split, num_workers, print_every,
                                                                [train_size,
                                                                 val_size,
                                                                 test_size])
+    # Load opth labelled data 
     train_loader_small = torch.utils.data.DataLoader(dataset=train_dataset_small,
                                                batch_size=batch_size,
                                                pin_memory=False,
@@ -49,12 +50,6 @@ def run(batch_size, epochs, val_split, num_workers, print_every,
                                                shuffle=True,
                                                num_workers=num_workers)
 
-    train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-                                               batch_size=2 * batch_size,
-                                               pin_memory=False,
-                                               drop_last=True,
-                                               shuffle=True,
-                                               num_workers=num_workers)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
                                              batch_size=batch_size,
                                              pin_memory=False,
@@ -68,9 +63,14 @@ def run(batch_size, epochs, val_split, num_workers, print_every,
                                               shuffle=True,
                                               num_workers=num_workers)
 
-    # lang = train_dataset.dataset.get_lang()
+    # Load unlabelled data
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                               batch_size=2 * batch_size,
+                                               pin_memory=False,
+                                               drop_last=True,
+                                               shuffle=True,
+                                               num_workers=num_workers)
 
-    # model = MnistCNNModel()
     if model_type == 'densenet121':
         model = models.densenet121(pretrained=False)
     elif model_type == 'resnet101':
@@ -112,8 +112,7 @@ def run(batch_size, epochs, val_split, num_workers, print_every,
 
     criterion = nn.CrossEntropyLoss()
 
-    # trainer = MultiTaskTrainer(model, optimizer, scheduler, criterion, tasks, epochs, lang, print_every = print_every)
-    # =============================== PRE-TRAIN KD MODEL ========================
+    # =============================== PRE-TRAIN KD MODEL on small labelled data ========================
     optimizer = torch.optim.SGD(kd_model.parameters(),
                                 weight_decay=weight_decay,
                                 momentum=momentum,
@@ -125,19 +124,20 @@ def run(batch_size, epochs, val_split, num_workers, print_every,
                                   min_lr=1e-7,
                                   verbose=True)
     trainset_percent = (1 - val_split - 0.15)
-    # model = copy.deepcopy(kd_model)
     trainer = SmallTrainer(kd_model, optimizer, scheduler, criterion, epochs,
            print_every =  print_every, trainset_split = trainset_percent)
-    trainer.train(train_loader, val_loader)
-    # model.load_state_dict(torch.load(os.path.join(trainer.save_location_dir,'best_model.pt')))
-#
+    trainer.train(train_loader_small, val_loader)
+
+    # Load best KD model into model
+    model.load_state_dict(torch.load(os.path.join(trainer.save_location_dir,'best_model.pt')))
+
     val_loss, total_d_acc, total_f1, total_recall, total_precision, total_cm = trainer.validate(test_loader)
 
     with open(trainer.output_log, 'a+') as out:
         print('Test Loss',val_loss,'total_d_acc',total_d_acc, 'F1', total_f1, 'R', total_recall,'P', total_precision, file=out)
         print(total_cm, file=out)
 
-    # =============================== TRAIN MODEL WITH KD ========================
+    # =============================== TRAIN MODEL WITH KD on small labelled data ========================
     optimizer = torch.optim.SGD(model.parameters(),
                                 weight_decay=weight_decay,
                                 momentum=momentum,
@@ -150,19 +150,19 @@ def run(batch_size, epochs, val_split, num_workers, print_every,
                                   verbose=True)
     trainset_percent = (1 - val_split - 0.15)
     model = copy.deepcopy(kd_model)
-    # trainer = SmallTrainer(model, optimizer, scheduler, criterion, epochs,
-    #       print_every =  print_every, trainset_split = trainset_percent)
     trainer = KDTrainer(kd_model, model, optimizer, scheduler, criterion, epochs, print_every =  print_every, trainset_split = trainset_percent, kd_type='kd_only')
     trainer.train(train_loader, val_loader)
-    # model.load_state_dict(torch.load(os.path.join(trainer.save_location_dir,'best_model.pt')))
-#
+
+    # Load best KD model into model
+    model.load_state_dict(torch.load(os.path.join(trainer.save_location_dir,'best_model.pt')))
+
     val_loss, total_d_acc, total_f1, total_recall, total_precision, total_cm = trainer.validate(test_loader)
 
     with open(trainer.output_log, 'a+') as out:
         print('Test Loss',val_loss,'total_d_acc',total_d_acc, 'F1', total_f1, 'R', total_recall,'P', total_precision, file=out)
         print(total_cm, file=out)
 
-    # =============================== TRAIN WITH KD MODEL ========================
+    # =============================== TRAIN WITH KD MODEL on unlabelled ========================
     optimizer = torch.optim.SGD(model.parameters(),
                                 weight_decay=weight_decay,
                                 momentum=momentum,
