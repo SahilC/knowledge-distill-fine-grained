@@ -1,5 +1,4 @@
-# Knowledge Distillation for Disease Prediction from Fundus Images
-Knowledge Distillation for Disease Prediction from Fundus Images. 
+## Knowledge Distillation for Disease Prediction from Fundus Images
 
 Work done in Microsoft AI Research. 
 
@@ -10,11 +9,13 @@ python main.py
 
 ```
 
-Configuration can be modified in:- 
+Run configuration can be modified in:- 
 
 ```
 config_small.gin
 
 ```
+
+
 
 
